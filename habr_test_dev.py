@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 from shapely.geometry import Polygon
 
-print("hello world")
 # https://habr.com/ru/articles/579838/
 
 def visualize_hexagons(hexagons, color="red", folium_map=None):
