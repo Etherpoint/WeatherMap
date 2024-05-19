@@ -8,13 +8,7 @@ import pandas as pd
 from shapely.geometry import Polygon
 
 # https://habr.com/ru/articles/579838/
-# подсчет количества областей
-def count_polygons(json_data):
-  polygon_count = 0
-  for feature in json_data:
-    if feature["geometry"]["type"] == "Polygon":
-      polygon_count += 1
-  return polygon_count
+
 def visualize_hexagons(hexagons, color="red", folium_map=None):
     polylines = []
     lat = []
@@ -73,7 +67,7 @@ def create_hexagons(geoJson, mapa=None):
     m.add_child(my_PolyLine)
 
     hexagons = list(
-        h3.polyfill(geoJson, 2))  # Второй параметр отвечает за размер гексагона. Чем меньше число, тем больше гексагон
+        h3.polyfill(geoJson, 3))  # Второй параметр отвечает за размер гексагона. Чем меньше число, тем больше гексагон
     polylines = []
     lat = []
     lng = []
@@ -107,14 +101,12 @@ def create_hexagons(geoJson, mapa=None):
 mapTemplate = folium.Map(tiles='cartodbpositron')
 with open('updateRussiaFull.geojson', encoding='utf-8') as f:
     geojson_data = json.load(f)
-    count = count_polygons(geojson_data["features"])
-    print(f"Количество объектов: {count}")
 
 gdf = gpd.GeoDataFrame.from_features(geojson_data['features'])
 
 # Преобразуйте GeoJSON в GeoDataFrame
 geoJsonGeometry = json.loads(gpd.GeoSeries(gdf['geometry']).to_json())
-for i in range(0, count):
+for i in range(0, len(gdf)):
     print("Запустился процесс обработки массива №: " + str(i + 1))
     geoJsonFeatures = geoJsonGeometry['features'][i]['geometry']
     geoJson = {'type': 'Polygon', 'coordinates': [np.column_stack((np.array(geoJsonFeatures['coordinates'][0])[:, 1],
