@@ -93,21 +93,15 @@ def create_hexagons(geoJson, mapa=None):
 
     return m, polygons_hex, polylines
 
-
-# выгрузим границы Тамбова из OSM
-# cities = ['Россия']
-# polygon_krd = ox.features_from_place(cities, {'admin_level': '3'}).reset_index()
-# https://ru.stackoverflow.com/questions/1515497/Как-собрать-точки-с-карты-osm-osmnx
-
 mapTemplate = folium.Map(tiles='cartodbpositron')
-with open('russiaFull.geojson', encoding='utf-8') as f:
+with open('russia.geojson', encoding='utf-8') as f:
     geojson_data = json.load(f)
 
 gdf = gpd.GeoDataFrame.from_features(geojson_data['features'])
 
 # Преобразуйте GeoJSON в GeoDataFrame
 geoJsonGeometry = json.loads(gpd.GeoSeries(gdf['geometry']).to_json())
-for i in range(0, 83):
+for i in range(0, len(gdf)):
     print("Запустился процесс обработки массива №: " + str(i + 1))
     geoJsonFeatures = geoJsonGeometry['features'][i]['geometry']
     geoJson = {'type': 'Polygon', 'coordinates': [np.column_stack((np.array(geoJsonFeatures['coordinates'][0])[:, 1],
