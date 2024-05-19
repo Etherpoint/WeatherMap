@@ -4,7 +4,6 @@ import folium
 import geopandas as gpd
 import h3
 import numpy as np
-import osmnx as ox
 import pandas as pd
 from shapely.geometry import Polygon
 
@@ -60,15 +59,16 @@ def create_hexagons(geoJson, mapa=None):
     lng = [p[1] for p in polyline]
 
     if mapa is None:
-        #чем меньше zoom_start, тем больше площади земли захватывает экран
+        # чем меньше zoom_start, тем больше площади земли захватывает экран
         m = folium.Map(location=[sum(lat) / len(lat), sum(lng) / len(lng)], zoom_start=5, tiles='cartodbpositron')
     else:
         m = mapa
-    #my_PolyLine = folium.PolyLine(locations=polyline, weight=8, color="green")
+    # my_PolyLine = folium.PolyLine(locations=polyline, weight=8, color="green")
     my_PolyLine = folium.PolyLine(locations=polyline, weight=8, color="white")
     m.add_child(my_PolyLine)
 
-    hexagons = list(h3.polyfill(geoJson, 2))   #Второй параметр отвечает за размер гексагона. Чем меньше число, тем больше гексагон
+    hexagons = list(
+        h3.polyfill(geoJson, 2))  # Второй параметр отвечает за размер гексагона. Чем меньше число, тем больше гексагон
     polylines = []
     lat = []
     lng = []
@@ -95,12 +95,12 @@ def create_hexagons(geoJson, mapa=None):
 
 
 # выгрузим границы Тамбова из OSM
-#cities = ['Россия']
-#polygon_krd = ox.features_from_place(cities, {'admin_level': '3'}).reset_index()
-#https://ru.stackoverflow.com/questions/1515497/Как-собрать-точки-с-карты-osm-osmnx
+# cities = ['Россия']
+# polygon_krd = ox.features_from_place(cities, {'admin_level': '3'}).reset_index()
+# https://ru.stackoverflow.com/questions/1515497/Как-собрать-точки-с-карты-osm-osmnx
 
 mapTemplate = folium.Map(tiles='cartodbpositron')
-with open('russia.geojson', encoding='utf-8') as f:
+with open('russiaFull.geojson', encoding='utf-8') as f:
     geojson_data = json.load(f)
 
 gdf = gpd.GeoDataFrame.from_features(geojson_data['features'])
@@ -108,10 +108,11 @@ gdf = gpd.GeoDataFrame.from_features(geojson_data['features'])
 # Преобразуйте GeoJSON в GeoDataFrame
 geoJsonGeometry = json.loads(gpd.GeoSeries(gdf['geometry']).to_json())
 for i in range(0, 83):
-    print("Запустился процесс обработки массива №: " + str(i+1))
+    print("Запустился процесс обработки массива №: " + str(i + 1))
     geoJsonFeatures = geoJsonGeometry['features'][i]['geometry']
     geoJson = {'type': 'Polygon', 'coordinates': [np.column_stack((np.array(geoJsonFeatures['coordinates'][0])[:, 1],
-                                                               np.array(geoJsonFeatures['coordinates'][0])[:, 0])).tolist()]}
+                                                                   np.array(geoJsonFeatures['coordinates'][0])[:,
+                                                                   0])).tolist()]}
     if str(i) == '0':
         m, polygons, polylines = create_hexagons(geoJson)
         mapTemplate = m
