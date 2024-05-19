@@ -8,7 +8,13 @@ import pandas as pd
 from shapely.geometry import Polygon
 
 # https://habr.com/ru/articles/579838/
-
+# подсчет количества областей
+def count_polygons(json_data):
+  polygon_count = 0
+  for feature in json_data:
+    if feature["geometry"]["type"] == "Polygon":
+      polygon_count += 1
+  return polygon_count
 def visualize_hexagons(hexagons, color="red", folium_map=None):
     polylines = []
     lat = []
@@ -63,7 +69,7 @@ def create_hexagons(geoJson, mapa=None):
     else:
         m = mapa
     # my_PolyLine = folium.PolyLine(locations=polyline, weight=8, color="green")
-    my_PolyLine = folium.PolyLine(locations=polyline, weight=8, color="white")
+    my_PolyLine = folium.PolyLine(locations=polyline, weight=8, color="green")
     m.add_child(my_PolyLine)
 
     hexagons = list(
@@ -99,14 +105,16 @@ def create_hexagons(geoJson, mapa=None):
 # https://ru.stackoverflow.com/questions/1515497/Как-собрать-точки-с-карты-osm-osmnx
 
 mapTemplate = folium.Map(tiles='cartodbpositron')
-with open('russia.geojson', encoding='utf-8') as f:
+with open('updateRussiaFull.geojson', encoding='utf-8') as f:
     geojson_data = json.load(f)
+    count = count_polygons(geojson_data["features"])
+    print(f"Количество объектов: {count}")
 
 gdf = gpd.GeoDataFrame.from_features(geojson_data['features'])
 
 # Преобразуйте GeoJSON в GeoDataFrame
 geoJsonGeometry = json.loads(gpd.GeoSeries(gdf['geometry']).to_json())
-for i in range(0, 83):
+for i in range(0, count):
     print("Запустился процесс обработки массива №: " + str(i + 1))
     geoJsonFeatures = geoJsonGeometry['features'][i]['geometry']
     geoJson = {'type': 'Polygon', 'coordinates': [np.column_stack((np.array(geoJsonFeatures['coordinates'][0])[:, 1],
