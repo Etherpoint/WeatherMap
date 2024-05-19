@@ -100,7 +100,7 @@ def create_hexagons(geoJson, mapa=None):
 # https://ru.stackoverflow.com/questions/1515497/Как-собрать-точки-с-карты-osm-osmnx
 
 mapTemplate = folium.Map(tiles='cartodbpositron')
-with open('russiaRegionsWithCrimea.geojson', encoding='utf-8') as f:
+with open('russiaFull.geojson', encoding='utf-8') as f:
     geojson_data = json.load(f)
 
 gdf = gpd.GeoDataFrame.from_features(geojson_data['features'])
