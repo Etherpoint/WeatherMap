@@ -4,7 +4,7 @@
 **Task**: visualization of the heat map of Russia in real time
 
 **Current task**:
-1. Конвертация мультиполигонов в полигоны
+1. Конвертация мультиполигонов в полигоны (russiaFull.geojson $\Rightarrow$ russia.geojson )
 2. Присоединить Крым к России в russia.geosjon
 3. Асинхронность 
 4. Перевод значении температуры в RGB
