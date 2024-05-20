@@ -64,11 +64,11 @@ def create_hexagons(geoJson, mapa=None):
     else:
         m = mapa
     # my_PolyLine = folium.PolyLine(locations=polyline, weight=8, color="green")
-    my_PolyLine = folium.PolyLine(locations=polyline, weight=8, color="white")
+    my_PolyLine = folium.PolyLine(locations=polyline, weight=8, color="green")
     m.add_child(my_PolyLine)
 
     hexagons = list(
-        h3.polyfill(geoJson, 2))  # Второй параметр отвечает за размер гексагона. Чем меньше число, тем больше гексагон
+        h3.polyfill(geoJson, 3))  # Второй параметр отвечает за размер гексагона. Чем меньше число, тем больше гексагон
     polylines = []
     lat = []
     lng = []
@@ -94,7 +94,7 @@ def create_hexagons(geoJson, mapa=None):
     return m, polygons_hex, polylines
 
 mapTemplate = folium.Map(tiles='cartodbpositron')
-with open('russia.geojson', encoding='utf-8') as f:
+with open('updateRussiaFull.geojson', encoding='utf-8') as f:
     geojson_data = json.load(f)
 
 gdf = gpd.GeoDataFrame.from_features(geojson_data['features'])
