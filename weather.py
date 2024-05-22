@@ -1,8 +1,8 @@
 import json
-import sys
 import requests
+import os
 
-api = sys.argv[1]
+api = os.getenv("API_KEY")
 print(api)
 lat = 55.7522
 lon = 37.6156
