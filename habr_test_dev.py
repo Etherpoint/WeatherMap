@@ -2,53 +2,21 @@ import json
 
 import folium
 import geopandas as gpd
+import os
 import h3
+import requests
 import numpy as np
 import pandas as pd
 from shapely.geometry import Polygon
 
 
 # https://habr.com/ru/articles/579838/
-
-def visualize_hexagons(hexagons, color="red", folium_map=None):
-    polylines = []
-    lat = []
-    lng = []
-    for hex in hexagons:
-        polygons = h3.h3_set_to_multi_polygon([hex], geo_json=False)
-        outlines = [loop for polygon in polygons for loop in polygon]
-        polyline = [outline + [outline[0]] for outline in outlines][0]
-        lat.extend(map(lambda v: v[0], polyline))
-        lng.extend(map(lambda v: v[1], polyline))
-        polylines.append(polyline)
-
-    if folium_map is None:
-        m = folium.Map(location=[sum(lat) / len(lat), sum(lng) / len(lng)], zoom_start=20, tiles='cartodbpositron')
-    else:
-        m = folium_map
-
-    for polyline in polylines:
-        my_PolyLine = folium.PolyLine(locations=polyline, weight=8, color=color)
-        m.add_child(my_PolyLine)
-    return m
-
-
-def visualize_polygons(geometry):
-    lats, lons = get_lat_lon(geometry)
-
-    m = folium.Map(location=[sum(lats) / len(lats), sum(lons) / len(lons)], zoom_start=13, tiles='cartodbpositron')
-
-    overlay = gpd.GeoSeries(geometry).to_json()
-    folium.GeoJson(overlay, name='boundary').add_to(m)
-
-    return m
-
-
-# выводим центроиды полигонов
-def get_lat_lon(geometry):
-    lon = geometry.apply(lambda x: x.x if x.geom_type == 'Point' else x.centroid.x)
-    lat = geometry.apply(lambda x: x.y if x.geom_type == 'Point' else x.centroid.y)
-    return lat, lon
+api = os.getenv("API_KEY")
+def getTemperatureByLatLon(array):
+    url = "https://api.openweathermap.org/data/2.5/weather?units=metric&lat=" + str(array[0]) + "&lon=" + str(
+        array[1]) + "&appid=" + api
+    res = requests.get(url).json()
+    print(res['main']['temp'])
 
 
 def create_hexagons(geoJson, mapa=None):
@@ -67,7 +35,7 @@ def create_hexagons(geoJson, mapa=None):
                        max_lon=200)
     else:
         m = mapa
-    my_PolyLine = folium.PolyLine(locations=polyline, weight=0, color="green")
+    my_PolyLine = folium.PolyLine(locations=polyline, weight=1, color="green")
     m.add_child(my_PolyLine)
 
     hexagons = list(
@@ -77,6 +45,7 @@ def create_hexagons(geoJson, mapa=None):
     lng = []
     for hex in hexagons:
         polygons = h3.h3_set_to_multi_polygon([hex], geo_json=False)
+        getTemperatureByLatLon(h3.h3_to_geo(hex))
         # flatten polygons into loops.
         outlines = [loop for polygon in polygons for loop in polygon]
         polyline = [outline + [outline[0]] for outline in outlines][0]
