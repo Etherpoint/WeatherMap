@@ -58,17 +58,20 @@ def create_hexagons(geoJson, mapa=None):
     lat = [p[0] for p in polyline]
     lng = [p[1] for p in polyline]
 
+
     if mapa is None:
         # чем меньше zoom_start, тем больше площади земли захватывает экран
-        m = folium.Map(location=[sum(lat) / len(lat), sum(lng) / len(lng)], zoom_start=5, tiles='cartodbpositron')
+        m = folium.Map(location=[sum(lat) / len(lat), sum(lng) / len(lng)],
+                       zoom_start=11,
+                       tiles='cartodbpositron',
+                       max_lon=200)
     else:
         m = mapa
-    # my_PolyLine = folium.PolyLine(locations=polyline, weight=8, color="green")
-    my_PolyLine = folium.PolyLine(locations=polyline, weight=8, color="green")
+    my_PolyLine = folium.PolyLine(locations=polyline, weight=0, color="green")
     m.add_child(my_PolyLine)
 
     hexagons = list(
-        h3.polyfill(geoJson, 3))  # Второй параметр отвечает за размер гексагона. Чем меньше число, тем больше гексагон
+        h3.polyfill(geoJson, 5))  # Второй параметр отвечает за размер гексагона. Чем меньше число, тем больше гексагон
     polylines = []
     lat = []
     lng = []
@@ -94,7 +97,8 @@ def create_hexagons(geoJson, mapa=None):
     return m, polygons_hex, polylines
 
 mapTemplate = folium.Map(tiles='cartodbpositron')
-with open('updateRussiaFull.geojson', encoding='utf-8') as f:
+m = mapTemplate
+with open('MSKandMO/MoscowAND_MO.geojson', encoding='utf-8') as f:
     geojson_data = json.load(f)
 
 gdf = gpd.GeoDataFrame.from_features(geojson_data['features'])
@@ -112,4 +116,4 @@ for i in range(0, len(gdf)):
         mapTemplate = m
     else:
         m, polygons, polylines = create_hexagons(geoJson, mapTemplate)
-    m.save("habr_devmap_polygons.html")
+m.save("habr_devmap_polygons.html")
