@@ -1,11 +1,15 @@
 import json
-
+import geojson
 import folium
 import geopandas as gpd
 import h3
 import numpy as np
 import pandas as pd
 from shapely.geometry import Polygon
+from shapely.geometry import LineString
+from shapely.ops import split
+from shapely.affinity import translate
+
 
 # https://habr.com/ru/articles/579838/
 
@@ -42,7 +46,20 @@ def visualize_polygons(geometry):
 
     return m
 
+def fix_map (geojson_file):
+    # цикл для увеличения первой координаты на 360 для 4 областей
+    for j in range(4):
+        count_coord = len(geojson_file['features'][j]['geometry']['coordinates'][0])
+        for i in range(count_coord):
+            first_coord = geojson_file['features'][j]['geometry']['coordinates'][0][i][0]
+            new_first_coord = first_coord + 360
+            geojson_file['features'][j]['geometry']['coordinates'][0][i][0] = new_first_coord
 
+    # Сохраняем обновленные данные GeoJSON
+    with open('updateRussiaFull_test.geojson', 'w') as f:
+        geojson.dump(geojson_file, f)
+
+    return geojson_file
 # выводим центроиды полигонов
 def get_lat_lon(geometry):
     lon = geometry.apply(lambda x: x.x if x.geom_type == 'Point' else x.centroid.x)
@@ -59,7 +76,7 @@ def create_hexagons(geoJson, mapa=None):
 
     if mapa is None:
         # чем меньше zoom_start, тем больше площади земли захватывает экран
-        m = folium.Map(location=[sum(lat) / len(lat), sum(lng) / len(lng)], zoom_start=5, tiles='cartodbpositron')
+        m = folium.Map(location=[66, 94], zoom_start=3, tiles='cartodbpositron')
     else:
         m = mapa
     # my_PolyLine = folium.PolyLine(locations=polyline, weight=8, color="green")
@@ -67,7 +84,7 @@ def create_hexagons(geoJson, mapa=None):
     m.add_child(my_PolyLine)
 
     hexagons = list(
-        h3.polyfill(geoJson, 3))  # Второй параметр отвечает за размер гексагона. Чем меньше число, тем больше гексагон
+        h3.polyfill(geoJson, 2))  # Второй параметр отвечает за размер гексагона. Чем меньше число, тем больше гексагон
     polylines = []
     lat = []
     lng = []
@@ -99,8 +116,10 @@ def create_hexagons(geoJson, mapa=None):
 # https://ru.stackoverflow.com/questions/1515497/Как-собрать-точки-с-карты-osm-osmnx
 
 mapTemplate = folium.Map(tiles='cartodbpositron')
-with open('updateRussiaFull.geojson', encoding='utf-8') as f:
+with open('updateRussiaFull_test.geojson', encoding='utf-8') as f:
     geojson_data = json.load(f)
+
+#geojson_data = fix_map(geojson_data) #исправления бага с картой
 
 gdf = gpd.GeoDataFrame.from_features(geojson_data['features'])
 
