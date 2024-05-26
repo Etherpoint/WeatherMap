@@ -12,6 +12,7 @@ import requests
 from geojson import Polygon, Feature, FeatureCollection, dump
 from shapely import wkt
 from shapely.geometry import Polygon
+import jenkspy
 
 # https://habr.com/ru/articles/579838/
 api = os.getenv("API_KEY")
@@ -19,13 +20,14 @@ country_id = 0
 hex_id = 0
 features = []
 
-#Начало подсчета времени выполнения программы
+# Начало подсчета времени выполнения программы
 start = datetime.datetime.now()
 
 
 def getTemperatureByLatLon(array):
     global country_id
-    url = "https://api.openweathermap.org/data/2.5/weather?units=metric&lat=" + str(array[0]) + "&lon=" + str(
+    url = "https://api.openweathermap.org/data/2.5/weather?exclude=minutely,hourly,daily,alerts&units=metric&lat=" + str(
+        array[0]) + "&lon=" + str(
         array[1]) + "&appid=" + api
     res = requests.get(url)
     waitTime = res.elapsed.microseconds / 1000000
@@ -35,7 +37,7 @@ def getTemperatureByLatLon(array):
         print(str(res) + " для гексагона №: " + str(hex_id))
         country_id += 1
 
-    #искусственное замедление программы из-за лимитов сервиса openweather
+    # искусственное замедление программы из-за лимитов сервиса openweather
     time.sleep(0 if (1 - waitTime) < 0 else 1 - waitTime)
 
 
@@ -49,8 +51,9 @@ def createChoropleth(hex_gjn, m):
         key_on="feature.id",
         data=data,
         line_opacity=0.1,
-        fill_color="RdYlBu_r",
+        fill_color="Spectral_r",
         nan_fill_color="black",
+        use_jenks=True
     ).add_to(m)
     folium.LayerControl().add_to(m)
     return m
@@ -59,7 +62,7 @@ def createChoropleth(hex_gjn, m):
 def addHexagonToFeature(hexagon):
     global hex_id
     global features
-    polygon = Polygon(hexagon[0])
+    polygon = Polygon((hexagon[0])[0])
     features.append(Feature(geometry=polygon, id=hex_id))
     hex_id += 1
 
@@ -71,13 +74,11 @@ def addFeatureToFile():
         dump(feature_collection, gj)
 
 
-def create_hexagons(geoJson, mapa=None):
+def create_hexagons(geoJson):
     polyline = geoJson['coordinates'][0]
-
     polyline.append(polyline[0])
-
     hexagons = list(
-        h3.polyfill(geoJson, 3))  # Второй параметр отвечает за размер гексагона. Чем меньше число, тем больше гексагон
+        h3.polyfill(geoJson, 4))  # Второй параметр отвечает за размер гексагона. Чем меньше число, тем больше гексагон
     polylines = []
     lat = []
     lng = []
@@ -86,7 +87,6 @@ def create_hexagons(geoJson, mapa=None):
         addHexagonToFeature(h3.h3_set_to_multi_polygon([hex], geo_json=True))
         # Получаем и выводим координату центра гексагона
         hexCenter = h3.h3_to_geo(hex)
-        print(hexCenter)
         # Получаем температуру по гексагону
         getTemperatureByLatLon(hexCenter)
 
@@ -110,42 +110,46 @@ def create_hexagons(geoJson, mapa=None):
     return m, polygons_hex, polylines
 
 
-with open('hexagons.geojson', 'w') as h:
-    print("Создается файл для хранения гексагонов")
+def fileStartCreating():
+    with open('hexagons.geojson', 'w'):
+        print("Создается файл для хранения гексагонов")
+    with open('temperatures.csv', 'w') as t:
+        t.write("id,temperature" + "\n")
+    with open('MSKandMO/MoscowAND_MO_test.geojson', encoding='utf-8') as f:
+        geojson_data = json.load(f)
+    return geojson_data
 
-with open('temperatures.csv', 'w') as f:
-    f.write("id,temperature" + "\n")
-with open('MSKandMO/MoscowAND_MO_test.geojson', encoding='utf-8') as f:
-    geojson_data = json.load(f)
+
+def createMap():
+    return folium.Map(location=[55.7522, 37.6156], tiles='cartodbpositron', zoom_start=6)
 
 
-mapTemplate = folium.Map(location=[55.7522, 37.6156], tiles='cartodbpositron', zoom_start=6)
-m = mapTemplate
+def prepareMap(templateMap):
+    gdf = gpd.GeoDataFrame.from_features(fileStartCreating()['features'])
 
-gdf = gpd.GeoDataFrame.from_features(geojson_data['features'])
+    # Преобразуйте GeoJSON в GeoDataFrame
+    geoJsonGeometry = json.loads(gpd.GeoSeries(gdf['geometry']).to_json())
+    geoJson = []
+    for i in range(0, len(gdf)):
+        print("Запустился процесс обработки массива №: " + str(i + 1))
+        geoJsonFeatures = geoJsonGeometry['features'][i]['geometry']
+        geoJson = {'type': 'Polygon',
+                   'coordinates': [np.column_stack((np.array(geoJsonFeatures['coordinates'][0])[:, 1],
+                                                    np.array(geoJsonFeatures['coordinates'][0])[:,
+                                                    0])).tolist()]}
+        templateMap, polygons, polylines = create_hexagons(geoJson)
+    addFeatureToFile()
 
-# Преобразуйте GeoJSON в GeoDataFrame
-geoJsonGeometry = json.loads(gpd.GeoSeries(gdf['geometry']).to_json())
-geoJson = []
-for i in range(0, len(gdf)):
-    print("Запустился процесс обработки массива №: " + str(i + 1))
-    geoJsonFeatures = geoJsonGeometry['features'][i]['geometry']
-    geoJson = {'type': 'Polygon', 'coordinates': [np.column_stack((np.array(geoJsonFeatures['coordinates'][0])[:, 1],
-                                                                   np.array(geoJsonFeatures['coordinates'][0])[:,
-                                                                   0])).tolist()]}
-    if str(i) == '0':
-        m, polygons, polylines = create_hexagons(geoJson)
-        mapTemplate = m
-    else:
-        m, polygons, polylines = create_hexagons(geoJson, mapTemplate)
-addFeatureToFile()
+    with open('hexagons.geojson', encoding='utf-8') as f:
+        hex_data = json.load(f)
+    hexdf = gpd.GeoDataFrame.from_features(hex_data['features'])
+    geoJsonGeometryHex = json.loads(gpd.GeoSeries(hexdf['geometry']).to_json())
+    createChoropleth(geoJsonGeometryHex, templateMap)
 
-with open('hexagons.geojson', encoding='utf-8') as f:
-    hex_data = json.load(f)
-hexdf = gpd.GeoDataFrame.from_features(hex_data['features'])
-geoJsonGeometryHex = json.loads(gpd.GeoSeries(hexdf['geometry']).to_json())
 
-createChoropleth(geoJsonGeometryHex, m)
+m = createMap()
+prepareMap(m)
+
 m.save("habr_devmap_polygons.html")
 
 finish = datetime.datetime.now()
