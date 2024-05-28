@@ -12,3 +12,12 @@ folium|0.16.0|Сreating a map
 geopandas|0.14.4|Parsing geojson
 h3|3.7.7|Drawing hexagons
 requests|2.31.0|Getting temperature via rest api
+
+**Updates**: added multithreading in habr_test_dev_v2.py
+
+Comparison of operating time in sequential and multi-threaded mode:
+![Рисунок1](https://github.com/Etherpoint/WeatherMap/assets/115358372/c5e069db-ff20-4d9c-bf0b-5552010abdfa)
+
+![Рисунок2](https://github.com/Etherpoint/WeatherMap/assets/115358372/7ca3a601-c772-44c3-aaea-1218934a57bd)
+
+
