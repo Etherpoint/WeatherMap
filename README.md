@@ -18,6 +18,6 @@ requests|2.31.0|Getting temperature via rest api
 Comparison of operating time in sequential and multi-threaded mode:
 ![Рисунок1](https://github.com/Etherpoint/WeatherMap/assets/115358372/c5e069db-ff20-4d9c-bf0b-5552010abdfa)
 
-![Рисунок2](https://github.com/Etherpoint/WeatherMap/assets/115358372/7ca3a601-c772-44c3-aaea-1218934a57bd)
+![Рисунок2](https://github.com/Etherpoint/WeatherMap/assets/115358372/9cd45acf-e273-4f07-83ab-19e4448bdf7b)
 
 
